@@ -1,0 +1,9 @@
+LR: false
+dim: 0.04
+ip: www.google.com
+light: 0.5
+max_latency: 150
+min_latency: 10
+number_of_times: -1
+pause: 1
+timeout: 1200
