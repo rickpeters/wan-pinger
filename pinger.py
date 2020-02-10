@@ -18,7 +18,7 @@ class Config(object):
         # set reasonable defaults
         self.ip = "www.google.com"
         self.min_latency = 25
-        self.max_latency = 40
+        self.max_latency = 60
         self.number_of_times = -1
         self.timeout = 1200
         self.dim = 0.04
@@ -29,8 +29,7 @@ class Config(object):
         # try if config.yaml is present (autoload)
         configfile = "config.yaml"
         if os.path.exists(configfile):
-            print "trying to open file"
-            # open file
+            print "reading config.yaml"
             fh = open(configfile)
             yd = yaml.safe_load(fh)
             # print "yamlfile", yd
@@ -45,6 +44,8 @@ class Config(object):
             if 'LR' in yd: self.LR = yd['LR']
             if 'pause' in yd: self.pause = yd['pause']
             fh.close()
+        else:
+            print "config.yaml not found, using defaults"
 
     def test(self):
         self.min_latency = 1
@@ -135,13 +136,34 @@ class ShowLatency(object):
         else:
             self.bit = self.bit - 1 if self.bit > 0 else 7
 
+def sigterm_handler(signal, frame):
+    # save the state here or do whatever you want
+    # quit
+    print "signal received, quitting pinger.py"
+    clear()
+    show()
+    sys.exit(0)
+
 # globals
 config = Config()
+
+# setup interrupt handler
+signal.signal(signal.SIGTERM, sigterm_handler)
 
 # main program
 try:
     if __name__ == '__main__':
     
+        nargs = len(sys.argv)
+        if nargs > 2:
+            print "usage: python pinger.py [<ip> | test]"
+            print "  or use config.yaml to do full config"
+            sys.exit(1)
+        # Taking the args from command line
+        if nargs == 2:
+            ip = sys.argv[1]
+            if ip == "test": config.ip = "test"
+
         pinger = Pinger()
         if config.ip == "test":
             config.test()
@@ -154,13 +176,4 @@ except KeyboardInterrupt:
     clear()
     show()
     sys.exit()
-
-def sigterm_handler(signal, frame):
-    # save the state here or do whatever you want
-    # quit
-    clear()
-    show()
-    sys.exit(0)
-
-signal.signal(signal.SIGTERM, sigterm_handler)
 
