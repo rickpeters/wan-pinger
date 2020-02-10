@@ -4,6 +4,7 @@ import signal
 import datetime
 import time
 import colorsys
+import yaml
 from blinkt import set_brightness, set_pixel, show, clear
 
 class Config(object):
@@ -14,6 +15,7 @@ class Config(object):
     def __init__(self):
         object.__init__(self)
 
+        # set reasonable defaults
         self.ip = "www.google.com"
         self.min_latency = 25
         self.max_latency = 40
@@ -23,6 +25,26 @@ class Config(object):
         self.light = 0.08
         self.LR = False
         self.pause = 1
+
+        # try if config.yaml is present (autoload)
+        configfile = "config.yaml"
+        if os.path.exists(configfile):
+            print "trying to open file"
+            # open file
+            fh = open(configfile)
+            yd = yaml.safe_load(fh)
+            # print "yamlfile", yd
+            # use only values that are present
+            if 'ip' in yd: self.ip = yd['ip']
+            if 'min_latency' in yd: self.min_latency = yd['min_latency']
+            if 'max_latency' in yd: self.max_latency = yd['max_latency']
+            if 'number_of_times' in yd: self.number_of_times = yd['number_of_times']
+            if 'timeout' in yd: self.timeout = yd['timeout']
+            if 'dim' in yd: self.dim = yd['dim']
+            if 'light' in yd: self.light = yd['light']
+            if 'LR' in yd: self.LR = yd['LR']
+            if 'pause' in yd: self.pause = yd['pause']
+            fh.close()
 
     def test(self):
         self.min_latency = 1
@@ -50,7 +72,7 @@ class Pinger(object):
                 i += 1
 
             if config.ip == "test":
-                print "ms: ", i
+                #print "ms: ", i
                 self.latency.show(float(i))
             else:
                 cmd = 'timeout 1 ping -c 1 ' + config.ip
@@ -87,14 +109,14 @@ class ShowLatency(object):
         #
         # everything below config.min_latency  ms is assumed to be great, so is green
         #
-        print "latency: ", latency
+        # print "latency: ", latency
         latency = latency if latency <= config.max_latency else config.max_latency
         if latency <= config.min_latency:
             level = 1.0
         else:
             level = 1.0 - ((latency) / (config.max_latency))
         hue = (level * 80.0) / 360.0
-        print "latency: ", latency, " max_latency: ", config.max_latency, " level: ", level, " hue: ", hue
+        # print "latency: ", latency, " max_latency: ", config.max_latency, " level: ", level, " hue: ", hue
         r, g, b = [int(c * 255) for c in colorsys.hsv_to_rgb(hue, 1.0, 1.0)]
         return r, g, b
 
@@ -120,28 +142,11 @@ config = Config()
 try:
     if __name__ == '__main__':
     
-        if len(sys.argv) < 2:
-            print "usage: python pinger.py <ip> [n_sample=-1] [timeout=1200] [max_latency=40]"
-            sys.exit(1)
-    
-        # Taking the args from command line and store in config object
-        nargs = len(sys.argv)
-        print "nargs: ", nargs
-        print "config: ", vars(config)
-
-        config.ip = sys.argv[1]
-        if nargs > 2:
-            config.number_of_times = int(sys.argv[2])
-        if nargs > 3:
-            config.timeout = int(sys.argv[3])
-        if nargs > 4:
-            config.max_latency = float(sys.argv[4])
-
         pinger = Pinger()
         if config.ip == "test":
             config.test()
 
-        print "config2: ", vars(config)
+        print "config: ", vars(config)
         pinger.run_test()
 
 except KeyboardInterrupt:
@@ -152,7 +157,6 @@ except KeyboardInterrupt:
 
 def sigterm_handler(signal, frame):
     # save the state here or do whatever you want
-    # print('booyah! bye bye')
     # quit
     clear()
     show()
