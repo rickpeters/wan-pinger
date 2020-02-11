@@ -14,6 +14,7 @@
 case "$1" in
   start)
     echo "Starting wan-pinger"
+    cd /home/pi/workdir/wan-pinger
     nohup python /home/pi/workdir/wan-pinger/pinger.py &
     ;;
   stop)
