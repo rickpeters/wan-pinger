@@ -1,0 +1,29 @@
+#! /bin/bash
+# /etc/init.d/wan-pinger
+
+### BEGIN INIT INFO
+# Provides:          wan-pinger
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Script to start wan-pinger at boot time
+# Description:       Script to start wan-pinger at boot time
+### END INIT INFO
+
+case "$1" in
+  start)
+    echo "Starting wan-pinger"
+    nohup python /home/pi/workdir/wan-pinger/pinger.py &
+    ;;
+  stop)
+    echo "Stopping wan-pinger"
+    pkill -f python.*pinger.py
+    ;;
+  *)
+    echo "Usage: /etc/init.d/wan-pinger {start|stop}"
+    exit 1
+    ;;
+esac
+
+exit 0
