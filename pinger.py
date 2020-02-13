@@ -10,6 +10,16 @@ from blinkt import set_brightness, set_pixel, show, clear
 class Config(object):
     '''
     global configuration parameters
+    can also be set in config.yaml in working dir
+        ip:              ip-address or hostname, see ping command
+        min_latency:     minimum latency in ms, below min_latency is green
+        max_latency:     max_latency in ms, above max_latency is red
+        number_of_times: how often should we test, -1 is forever
+        dim:             brightness of led after signal
+        light:           brightness of led for actual result
+        LR:              direction of led-strip, True - left-to-right, False is right-to-left
+        pause:           time between ping tests
+        debug:           debug level, extra output statements for testing
     '''
 
     def __init__(self):
@@ -20,11 +30,11 @@ class Config(object):
         self.min_latency = 25
         self.max_latency = 60
         self.number_of_times = -1
-        self.timeout = 1200
         self.dim = 0.04
         self.light = 0.08
-        self.LR = False
-        self.pause = 1
+        self.LR = True
+        self.pause = 1.0
+        self.debug = False
 
         # try if config.yaml is present (autoload)
         configfile = "config.yaml"
@@ -32,17 +42,21 @@ class Config(object):
             print "reading config.yaml"
             fh = open(configfile)
             yd = yaml.safe_load(fh)
-            # print "yamlfile", yd
-            # use only values that are present
+            if 'debug' in yd: self.debug = yd['debug']
+            if self.debug: print "yamlfile", yd
+            # conditional loading, use only values that are present
             if 'ip' in yd: self.ip = yd['ip']
             if 'min_latency' in yd: self.min_latency = yd['min_latency']
-            if 'max_latency' in yd: self.max_latency = yd['max_latency']
             if 'number_of_times' in yd: self.number_of_times = yd['number_of_times']
-            if 'timeout' in yd: self.timeout = yd['timeout']
+            if 'max_latency' in yd: self.max_latency = yd['max_latency']
             if 'dim' in yd: self.dim = yd['dim']
             if 'light' in yd: self.light = yd['light']
             if 'LR' in yd: self.LR = yd['LR']
             if 'pause' in yd: self.pause = yd['pause']
+            if float(self.pause) < (self.max_latency / 1000.0):
+                # pause should be bigger then max_latency
+                print "pause is less then max_latency, use max_latency as pause"
+                self.pause = max_latency / 1000.0
             fh.close()
         else:
             print "config.yaml not found, using defaults"
@@ -73,22 +87,27 @@ class Pinger(object):
                 i += 1
 
             if config.ip == "test":
-                #print "ms: ", i
+                if config.debug: print "ms: ", i
                 self.latency.show(float(i))
             else:
-                cmd = 'timeout 1 ping -c 1 ' + config.ip
+                # 200 ms is smallest accepted value for -i in ping command
+                if config.max_latency < 200:
+                    timeout = 200
+                else:
+                    timeout = config.max_latency / 1000.0
                 # forming command
-                data = os.popen(cmd).read()
+                cmd = 'timeout 1 ping -c 1 ' + config.ip + ' -i ' + str(timeout)
                 # reading data return by popen
+                data = os.popen(cmd).read()
                 # Displaying results
                 if 'time=' in data and 'ms' in data:
                     ms = data.split('time=')[1].split(' ms')[0]
-                    # print datetime.datetime.now().strftime("%H:%M:%S"), ms
+                    if config.debug: print datetime.datetime.now().strftime("%H:%M:%S"), ms
                     latency = float(ms)
                     self.latency.show(latency)
                 else:
-                    # print datetime.datetime.now().strftime("%H:%M:%S"), -1
-                    self.latency.show(config.max_latency)
+                    if config.debug: print datetime.datetime.now().strftime("%H:%M:%S"), -1
+                    self.latency.show(timeout)
              
 class ShowLatency(object):
     blinkt = __import__('blinkt')
@@ -110,25 +129,26 @@ class ShowLatency(object):
         #
         # everything below config.min_latency  ms is assumed to be great, so is green
         #
-        # print "latency: ", latency
+        if config.debug: print "measured latency: ", latency
         latency = latency if latency <= config.max_latency else config.max_latency
         if latency <= config.min_latency:
             level = 1.0
         else:
             level = 1.0 - ((latency) / (config.max_latency))
         hue = (level * 80.0) / 360.0
-        # print "latency: ", latency, " max_latency: ", config.max_latency, " level: ", level, " hue: ", hue
+        if config.debug: print "corrected latency: ", latency, " max_latency: ", config.max_latency, " level: ", level, " hue: ", hue
         r, g, b = [int(c * 255) for c in colorsys.hsv_to_rgb(hue, 1.0, 1.0)]
         return r, g, b
 
 
     def show(self, latency = 0):
-        # from blinkt import set_brightness, set_pixel, show, clear set_clear_on_exit
 
         r, g, b = self.makeColor(latency)
         set_pixel(self.bit, r, g, b, config.light)
         show()
-        time.sleep(config.pause)
+        # try and correct the pause to make ping test have a
+        # frequency of once per configured pause moment
+        time.sleep(float(config.pause) - (float(latency) / 1000.0))
         set_pixel(self.bit, r, g, b, config.dim)
         show()
         if config.LR:
@@ -162,7 +182,9 @@ try:
         # Taking the args from command line
         if nargs == 2:
             ip = sys.argv[1]
-            if ip == "test": config.ip = "test"
+            if ip == "test":
+                config.ip = "test"
+                config.debug = True
 
         pinger = Pinger()
         if config.ip == "test":
@@ -173,6 +195,7 @@ try:
 
 except KeyboardInterrupt:
     # quit
+    print "program terminated"
     clear()
     show()
     sys.exit()

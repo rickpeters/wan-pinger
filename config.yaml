@@ -1,9 +1,18 @@
-LR: true
-dim: 0.04
-ip: www.google.com
-light: 0.5
-max_latency: 150
+# ip: ip-address or hostname, see ping command
+ip: "www.google.com"
+# min_ and max_latency in ms, below min_latency is green,
+# above max_latency is red
 min_latency: 10
+max_latency: 60
+# number_of_times, how often should we test, -1 is forever
 number_of_times: -1
-pause: 1
-timeout: 1200
+# dim: brightness of led after signal
+dim: 0.04
+# light: brightness of led for actual result
+light: 0.08
+# LR: direction of led-strip, True - left-to-right, False is right-to-left
+LR: False
+# pause: time between ping tests
+pause: 1.0
+# debug: extra debug output statements
+debug: False
