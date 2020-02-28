@@ -53,8 +53,7 @@ the script supports `start` and `stop` command.
 
 since this is a python program it has a few dependency's:
 
-* Minimum is having python and pip (I am not sure which version :-(, but I guess 2.7 )
-* The blinkt led-strip requires specific modules, google for [*pimoroni blinkt*](https://learn.pimoroni.com/tutorial/sandyj/getting-started-with-blinkt) to find out more
+* The blinkt led-strip requires specific modules, google for [*pimoroni blinkt*](https://learn.pimoroni.com/tutorial/sandyj/getting-started-with-blinkt) to find out more, this will also check the python and pip installation that's necessary.
 * There is a `requirements.txt`, so running a `sudo pip install -r requirements.txt` is enough
 
 
