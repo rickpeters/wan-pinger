@@ -23,6 +23,13 @@ In it's current state it's quite flexible and functional and has some nice featu
 * a sample config.yaml is provided
 * it is open-source and you are allowed to adapt it in any way you like but I would like to hear what you did :-)
 
+## installation
+
+since this is a python program it has a few dependency's:
+
+* The blinkt led-strip requires specific modules, google for [*pimoroni blinkt*](https://learn.pimoroni.com/tutorial/sandyj/getting-started-with-blinkt) to find out more, this will also check the python and pip installation that's necessary.
+* There is a `requirements.txt`, so running a `sudo pip install -r requirements.txt` is enough. Performing with `sudo` is essential otherwise the init.d script won't work!
+
 ## configuration
 
 By default the script pings *www.google.com* each second, if latency is below 25 ms it is determined fine (green) and above 60 ms it is bad (red). Between minimum and maximum a scale between green and red on a hue scale is used with 80 discrete values. A lot of parameters can be customized in a config.yaml. A test mode is available, as is a debug mode.
@@ -49,13 +56,16 @@ debug:           debug level, extra output statements for testing
 
 the script supports `start` and `stop` command.
 
-## installation
+**boot process**
 
-since this is a python program it has a few dependency's:
+The script `wanpinger` is ready to be added to `init.d`, requirement is that the wan-pinger repo is under `/home/pi/workdir/wan-pinger`:
 
-* The blinkt led-strip requires specific modules, google for [*pimoroni blinkt*](https://learn.pimoroni.com/tutorial/sandyj/getting-started-with-blinkt) to find out more, this will also check the python and pip installation that's necessary.
-* There is a `requirements.txt`, so running a `sudo pip install -r requirements.txt` is enough
+```
+$ sudo cp wanpinger /etc/init.d/
+$ sudo update-rc.d wanpinger defaults
+```
 
+To test the setup perform `sudo /etc/init.d/wanpinger start|stop`
 
 ## usage
 
